@@ -13,14 +13,7 @@ class ProductoDAO:
 
             productos = []
             for registro in registros:
-                producto = Producto(
-                    id = registro[0],
-                    nombre = registro[1],
-                    precio = registro[2],
-                    stock = registro[3],
-                    id_categoria = registro[4],
-                    id_usuario = registro[5]
-                )
+                producto = Producto(registro[0], registro[1], registro[2], registro[3], registro[4], registro[5])
                 productos.append(producto)
             return productos
         finally:
@@ -37,7 +30,7 @@ class ProductoDAO:
             VALUES(%s, %s, %s, %s, %s, %s)
             """
             cursor.execute(sql, (
-                producto.id,
+                producto.id_producto,
                 producto.nombre, 
                 producto.precio, 
                 producto.stock,
@@ -65,7 +58,7 @@ class ProductoDAO:
                 producto.stock,
                 producto.id_categoria,
                 producto.id_usuario,
-                producto.id
+                producto.id_producto
             ))
             conexion.commit()
         finally:

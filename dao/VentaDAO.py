@@ -13,15 +13,7 @@ class VentaDAO:
 
             ventas = []
             for registro in registros:
-                venta = Venta(
-                    id = registro[0],
-                    fecha_venta = registro[1],
-                    cantidad_producto = registro[2],
-                    total_venta = registro[3],
-                    id_usuario = registro[4],
-                    id_producto = registro[5],
-                    id_cliente = registro[6]
-                )
+                venta = Venta(registro[0], registro[1], registro[2], registro[3], registro[4], registro[5], registro[6])
                 ventas.append(venta)
             return ventas
         finally:
@@ -38,7 +30,7 @@ class VentaDAO:
             VALUES(%s, %s, %s, %s, %s, %s, %s)
             """
             cursor.execute(sql, (
-                venta.id,
+                venta.id_venta,
                 venta.fecha_venta, 
                 venta.cantidad_producto, 
                 venta.total_venta,
@@ -68,7 +60,7 @@ class VentaDAO:
                 venta.id_usuario,
                 venta.id_producto,
                 venta.id_cliente,
-                venta.id
+                venta.id_venta
             ))
             conexion.commit()
         finally:

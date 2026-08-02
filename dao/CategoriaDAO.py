@@ -13,10 +13,7 @@ class CategoriaDAO:
 
             categorias = []
             for registro in registros:
-                categoria = Categoria(
-                    id = registro[0],
-                    nombre = registro[1]
-                )
+                categoria = Categoria(registro[0], registro[1])
                 categorias.append(categoria)
             return categorias
         finally:
@@ -33,7 +30,7 @@ class CategoriaDAO:
             VALUES(%s, %s)
             """
             cursor.execute(sql, (
-                categoria.id,
+                categoria.id_categoria,
                 categoria.nombre
             ))
             conexion.commit()
@@ -53,7 +50,7 @@ class CategoriaDAO:
             """
             cursor.execute(sql, (
                 categoria.nombre,
-                categoria.id
+                categoria.id_categoria
             ))
             conexion.commit()
         finally:
