@@ -8,19 +8,12 @@ class UsuarioDAO:
         conexion = Conexion.obtener_conexion()
         cursor = conexion.cursor()
         try:
-            cursor.execute("SELECT id_usuario, tipo_usuario, nombre, apellido_paterno, apellido_materno, numero_telefono FROM usuario")
+            cursor.execute("SELECT id_usuario, tipo_usuario, nombre, apellido_paterno, apellido_materno, numero_telefono, contrasena FROM usuario")
             registros = cursor.fetchall()
 
             usuarios = []
             for registro in registros:
-                usuario = Usuario(
-                    id = registro[0],
-                    tipo_usuario = registro[1],
-                    nombre = registro[2],
-                    apellido_paterno = registro[3],
-                    apellido_materno = registro[4],
-                    numero_telefono = registro[5]
-                )
+                usuario = Usuario(registro[0], registro[1], registro[2], registro[3], registro[4], registro[5], registro[6])
                 usuarios.append(usuario)
             return usuarios
         finally:
@@ -33,16 +26,17 @@ class UsuarioDAO:
         cursor = conexion.cursor()
         try:
             sql = """
-            INSERT INTO usuario(id_usuario, tipo_usuario, nombre, apellido_paterno, apellido_materno, numero_telefono)
-            VALUES(%s, %s, %s, %s, %s, %s)
+            INSERT INTO usuario(id_usuario, tipo_usuario, nombre, apellido_paterno, apellido_materno, numero_telefono, contrasena)
+            VALUES(%s, %s, %s, %s, %s, %s, %s)
             """
             cursor.execute(sql, (
-                usuario.id,
+                usuario.id_usuario,
                 usuario.tipo_usuario, 
                 usuario.nombre, 
                 usuario.apellido_paterno,
                 usuario.apellido_materno,
-                usuario.numero_telefono
+                usuario.telefono,
+                usuario.contrasena
             ))
             conexion.commit()
         finally:
@@ -56,7 +50,7 @@ class UsuarioDAO:
         try:
             sql = """
             UPDATE usuario
-            SET tipo_usuario = %s, nombre = %s, apellido_paterno = %s, apellido_materno = %s, numero_telefono = %s
+            SET tipo_usuario = %s, nombre = %s, apellido_paterno = %s, apellido_materno = %s, numero_telefono = %s, contrasena = %s
             WHERE id_usuario = %s
             """
             cursor.execute(sql, (
@@ -64,10 +58,45 @@ class UsuarioDAO:
                 usuario.nombre,
                 usuario.apellido_paterno,
                 usuario.apellido_materno,
-                usuario.numero_telefono,
-                usuario.id
+                usuario.telefono,
+                usuario.contrasena,
+                usuario.id_usuario
             ))
             conexion.commit()
+        finally:
+            cursor.close()
+            conexion.close()
+
+    def autenticar(self, id_usuario, contrasena):
+        conexion = Conexion.obtener_conexion()
+        cursor = conexion.cursor()
+        try:
+            # Intento directo (coincidencia exacta)
+            cursor.execute(
+                "SELECT id_usuario, tipo_usuario, nombre, apellido_paterno, apellido_materno, numero_telefono, contrasena FROM usuario WHERE id_usuario = %s AND contrasena = %s",
+                (id_usuario, contrasena)
+            )
+            registro = cursor.fetchone()
+            if registro:
+                return Usuario(registro[0], registro[1], registro[2], registro[3], registro[4], registro[5], registro[6])
+
+            # Si falla la coincidencia exacta, intentar leer la contraseña almacenada y comparar quitando espacios
+            cursor.execute("SELECT contrasena FROM usuario WHERE id_usuario = %s", (id_usuario,))
+            row = cursor.fetchone()
+            if not row:
+                return None
+            almacenada = row[0] or ""
+            if almacenada.strip() == (contrasena or "").strip():
+                # Obtener registro completo y devolver Usuario
+                cursor.execute(
+                    "SELECT id_usuario, tipo_usuario, nombre, apellido_paterno, apellido_materno, numero_telefono, contrasena FROM usuario WHERE id_usuario = %s",
+                    (id_usuario,)
+                )
+                registro = cursor.fetchone()
+                if registro:
+                    return Usuario(registro[0], registro[1], registro[2], registro[3], registro[4], registro[5], registro[6])
+
+            return None
         finally:
             cursor.close()
             conexion.close()

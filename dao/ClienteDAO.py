@@ -13,15 +13,7 @@ class ClienteDAO:
 
             clientes = []
             for registro in registros:
-                cliente = Cliente(
-                    id = registro[0],
-                    nombre = registro[1],
-                    apellido_paterno = registro[2],
-                    apellido_materno = registro[3],
-                    numero_telefono = registro[4],
-                    correo_electronico = registro[5],
-                    id_usuario = registro[6]
-                )
+                cliente = Cliente(registro[0], registro[1], registro[2], registro[3], registro[4], registro[5], registro[6])
                 clientes.append(cliente)
             return clientes
         finally:
@@ -38,12 +30,12 @@ class ClienteDAO:
             VALUES(%s, %s, %s, %s, %s, %s, %s)
             """
             cursor.execute(sql, (
-                cliente.id,
+                cliente.id_cliente,
                 cliente.nombre, 
                 cliente.apellido_paterno, 
                 cliente.apellido_materno,
-                cliente.numero_telefono,
-                cliente.correo_electronico,
+                cliente.telefono,
+                cliente.correo,
                 cliente.id_usuario
             ))
             conexion.commit()
@@ -65,10 +57,10 @@ class ClienteDAO:
                 cliente.nombre,
                 cliente.apellido_paterno,
                 cliente.apellido_materno,
-                cliente.numero_telefono,
-                cliente.correo_electronico,
+                cliente.telefono,
+                cliente.correo,
                 cliente.id_usuario,
-                cliente.id
+                cliente.id_cliente
             ))
             conexion.commit()
         finally:

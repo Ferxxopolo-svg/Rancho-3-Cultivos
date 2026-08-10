@@ -1,87 +1,117 @@
-from database.conexion import Conexion
 from models.Categoria import Categoria
+from database.conexion import Conexion
 
 class CategoriaDAO:
 
-    # SELECT * FROM categoria (o vista)
+    # READ / OBTENER TODAS LAS CATEGORÍAS
     def obtener_todo(self):
-        conexion = Conexion.obtener_conexion()
-        cursor = conexion.cursor()
+        conexion = None
         try:
+            conexion = Conexion.obtener_conexion()
+            cursor = conexion.cursor()
             cursor.execute("SELECT * FROM vista_categorias")
             registros = cursor.fetchall()
 
             categorias = []
             for registro in registros:
-                categoria = Categoria(
-                    id = registro[0],
-                    nombre = registro[1]
-                )
+                categoria = Categoria(registro[0], registro[1])
                 categorias.append(categoria)
             return categorias
+        except Exception as e:
+            print(f"Error al obtener categorías: {e}")
+            return []
         finally:
-            cursor.close()
-            conexion.close()
-    
-    # INSERT
-    def insertar(self, categoria):
-        conexion = Conexion.obtener_conexion()
-        cursor = conexion.cursor()
-        try:
-            sql = """
-            INSERT INTO categoria(id, nombre)
-            VALUES(%s, %s)
-            """
-            cursor.execute(sql, (
-                categoria.id,
-                categoria.nombre
-            ))
-            conexion.commit()
-        finally:
-            cursor.close()
-            conexion.close()
+            if conexion:
+                cursor.close()
+                conexion.close()
 
-    # UPDATE
-    def actualizar(self, categoria):
-        conexion = Conexion.obtener_conexion()
-        cursor = conexion.cursor()
+    # CREATE / INSERTAR CATEGORÍA
+    def insertar(self, categoria):
+        conexion = None
         try:
+            conexion = Conexion.obtener_conexion()
+            cursor = conexion.cursor()
+            sql = """
+            INSERT INTO categoria (nombre)
+            VALUES (%s)
+            """
+            cursor.execute(sql, (categoria.nombre,))
+            conexion.commit()
+        except Exception as e:
+            print(f"Error al insertar categoría: {e}")
+        finally:
+            if conexion:
+                cursor.close()
+                conexion.close()
+
+    # UPDATE / ACTUALIZAR CATEGORÍA
+    def actualizar(self, categoria):
+        conexion = None
+        try:
+            conexion = Conexion.obtener_conexion()
+            cursor = conexion.cursor()
             sql = """
             UPDATE categoria
             SET nombre = %s
             WHERE id = %s
             """
-            cursor.execute(sql, (
-                categoria.nombre,
-                categoria.id
-            ))
+            cursor.execute(sql, (categoria.nombre, categoria.id))
             conexion.commit()
+        except Exception as e:
+            print(f"Error al actualizar categoría: {e}")
         finally:
-            cursor.close()
-            conexion.close()
+            if conexion:
+                cursor.close()
+                conexion.close()
 
-    # DELETE
-    def eliminar(self, id):
-        conexion = Conexion.obtener_conexion()
-        cursor = conexion.cursor()
+    # DELETE / ELIMINAR CATEGORÍA
+    def eliminar(self, id_categoria):
+        conexion = None
         try:
-            cursor.execute("DELETE FROM categoria WHERE id = %s", (id,))
+            conexion = Conexion.obtener_conexion()
+            cursor = conexion.cursor()
+            sql = "DELETE FROM categoria WHERE id = %s"
+            cursor.execute(sql, (id_categoria,))
             conexion.commit()
+        except Exception as e:
+            print(f"Error al eliminar categoría: {e}")
         finally:
-            cursor.close()
-            conexion.close()
+            if conexion:
+                cursor.close()
+                conexion.close()
 
-    # OBTENER ULTIMO ID
-    def obtener_ultimo_id(self):
-        conexion = Conexion.obtener_conexion()
-        cursor = conexion.cursor()
+
+
+    def obtener_productos_por_categoria(self, id_categoria):
+        conexion = None
         try:
-            cursor.execute("SELECT MAX(id) FROM categoria")
-            resultado = cursor.fetchone()
-
-            if resultado[0] is None:
-                return 0
-            return resultado[0]
+            conexion = Conexion.obtener_conexion()
+            cursor = conexion.cursor()
+            sql = "SELECT id, nombre, precio, stock FROM producto WHERE id_categoria = %s"
+            cursor.execute(sql, (id_categoria,))
+            return cursor.fetchall()
+        except Exception as e:
+            print(f"Error al obtener productos de la categoría: {e}")
+            return []
         finally:
-            cursor.close()
-            conexion.close()
+            if conexion:
+                cursor.close()
+                conexion.close()
+
+    def insertar_producto_en_categoria(self, nombre, precio, stock, id_categoria):
+        conexion = None
+        try:
+            conexion = Conexion.obtener_conexion()
+            cursor = conexion.cursor()
+            sql = """
+            INSERT INTO producto (nombre, precio, stock, id_categoria)
+            VALUES (%s, %s, %s, %s)
+            """
+            cursor.execute(sql, (nombre, precio, stock, id_categoria))
+            conexion.commit()
+        except Exception as e:
+            print(f"Error al insertar producto en la categoría: {e}")
+        finally:
+            if conexion:
+                cursor.close()
+                conexion.close()
