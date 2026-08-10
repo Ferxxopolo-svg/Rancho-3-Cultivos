@@ -383,7 +383,7 @@ def main_window(page: ft.Page):
         )
         page.update()
 
-    # --- CATEGORÍAS (Incluye registro de cultivos/productos: Durazno, Haba, etc.) ---
+    # --- CATEGORÍAS ---
     def mostrar_categorias(e=None):
         try:
             categorias = categoria_dao.obtener_todo()
@@ -611,9 +611,12 @@ def main_window(page: ft.Page):
     def mostrar_clientes(e=None):
         try:
             clientes = cliente_dao.obtener_todo()
+            usuarios = usuario_dao.obtener_todo()
         except Exception as exc:
             set_message(f"No se pudieron cargar los clientes: {exc}")
-            clientes = []
+            clientes, usuarios = [], []
+
+        mapa_usuarios = {u.id_usuario: f"{u.nombre} {u.apellido_paterno}" for u in usuarios}
 
         def abrir_nuevo(_=None):
             siguiente_id = cliente_dao.obtener_ultimo_id() + 1
@@ -674,6 +677,7 @@ def main_window(page: ft.Page):
 
         rows = []
         for cliente in clientes:
+            nombre_user = mapa_usuarios.get(cliente.id_usuario, str(cliente.id_usuario))
             rows.append(
                 ft.DataRow(
                     cells=[
@@ -683,7 +687,7 @@ def main_window(page: ft.Page):
                         ft.DataCell(ft.Text(cliente.apellido_materno)),
                         ft.DataCell(ft.Text(cliente.telefono)),
                         ft.DataCell(ft.Text(cliente.correo)),
-                        ft.DataCell(ft.Text(str(cliente.id_usuario))),
+                        ft.DataCell(ft.Text(nombre_user)),
                         ft.DataCell(
                             ft.Row(
                                 spacing=0,
