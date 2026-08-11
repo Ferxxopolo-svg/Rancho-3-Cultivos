@@ -7,6 +7,7 @@ from dao.UsuarioDAO import UsuarioDAO
 from dao.VentaDAO import VentaDAO
 from models.Categoria import Categoria
 from models.Cliente import Cliente
+from models.Ticket import crear_pdf_fpdf
 from models.Usuario import Usuario
 from models.Venta import Venta
 
@@ -846,6 +847,40 @@ def main_window(page: ft.Page):
 
             show_confirm_page(f"¿Eliminar la venta con ID {venta.id_venta}?", aceptar, on_cancel=lambda e: mostrar_ventas())
 
+        def generar_ticket(venta):
+            cliente = next(
+                (cl for cl in clientes if str(cl.id_cliente) == str(venta.id_cliente)),
+                None,
+            )
+            categoria = next(
+                (c for c in categorias if str(c.id_categoria) == str(venta.id_producto)),
+                None,
+            )
+
+            if cliente:
+                nombre_cliente = " ".join(
+                    parte
+                    for parte in (
+                        cliente.nombre,
+                        cliente.apellido_paterno,
+                        cliente.apellido_materno,
+                    )
+                    if parte
+                )
+            else:
+                nombre_cliente = f"Cliente ID {venta.id_cliente}"
+
+            nombre_producto = categoria.nombre if categoria else f"ID {venta.id_producto}"
+            archivo = crear_pdf_fpdf(
+                id_venta=venta.id_venta,
+                cliente=nombre_cliente,
+                total=venta.total_venta,
+                fecha=venta.fecha_venta,
+                producto=nombre_producto,
+                cantidad=venta.cantidad_producto,
+            )
+            set_message(f"Ticket generado correctamente en: {archivo}", PRIMARY)
+
         rows = []
         for venta in ventas:
             prod_id_val = getattr(venta, 'id_producto', getattr(venta, 'id_categoria', '-'))
@@ -863,6 +898,15 @@ def main_window(page: ft.Page):
                             ft.Row(
                                 spacing=0,
                                 controls=[
+                                    ft.IconButton(
+                                        ft.Icons.RECEIPT_LONG,
+                                        tooltip="Generar ticket PDF",
+                                        icon_color=PRIMARY,
+                                        on_click=click_and_call(
+                                            lambda e, v=venta: generar_ticket(v),
+                                            'generar_ticket'
+                                        ),
+                                    ),
                                     ft.IconButton(ft.Icons.EDIT, tooltip="Editar", on_click=click_and_call(lambda e, v=venta: editar_venta(v), 'editar_venta')),
                                     ft.IconButton(ft.Icons.DELETE, tooltip="Eliminar", icon_color=ft.Colors.RED_600, on_click=click_and_call(lambda e, v=venta: eliminar_venta(v), 'eliminar_venta')),
                                 ],

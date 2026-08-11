@@ -1,8 +1,9 @@
 import flet as ft
 import psycopg2
 
+# ==========================================
 # 1. CLASE DE CONEXIÓN A LA BASE DE DATOS
-
+# ==========================================
 class Conexion:
     @staticmethod
     def obtener_conexion():
@@ -13,7 +14,10 @@ class Conexion:
             password="tu_password"
         )
 
+
+# ==========================================
 # 2. MODELO: Categoria
+# ==========================================
 class Categoria:
     def __init__(self, id_categoria=None, nombre=None, productos=None):
         self.id_categoria = id_categoria
@@ -27,8 +31,9 @@ class Categoria:
         return f"Categoria(id_categoria={self.id_categoria}, nombre='{self.nombre}')"
 
 
+# ==========================================
 # 3. ACCESO A DATOS (DAO): CategoriaDAO
-
+# ==========================================
 class CategoriaDAO:
 
     def obtener_todo(self):
@@ -82,27 +87,12 @@ class CategoriaDAO:
                 cursor.close()
                 conexion.close()
 
-    def eliminar(self, id_categoria):
-        conexion = None
-        try:
-            conexion = Conexion.obtener_conexion()
-            cursor = conexion.cursor()
-            sql = "DELETE FROM categoria WHERE id = %s;"
-            cursor.execute(sql, (id_categoria,))
-            conexion.commit()
-        except Exception as e:
-            print(f"Error al eliminar categoría: {e}")
-        finally:
-            if conexion:
-                cursor.close()
-                conexion.close()
-
     def obtener_ultimo_id(self):
         conexion = None
         try:
             conexion = Conexion.obtener_conexion()
             cursor = conexion.cursor()
-            cursor.execute("SELECT MAX(id) FROM producto;")
+            cursor.execute("SELECT MAX(id) FROM categoria;")
             resultado = cursor.fetchone()
             return resultado[0] if resultado and resultado[0] is not None else 0
         except Exception as e:
@@ -121,6 +111,7 @@ class CategoriaDAO:
         try:
             conexion = Conexion.obtener_conexion()
             cursor = conexion.cursor()
+            # Ajustado para soportar los nuevos campos si tu tabla producto almacena nombre, variedad, precio y stock
             sql = "SELECT id, nombre, precio, stock FROM producto WHERE id_categoria = %s ORDER BY id ASC;"
             cursor.execute(sql, (id_categoria,))
             return cursor.fetchall()
@@ -132,19 +123,21 @@ class CategoriaDAO:
                 cursor.close()
                 conexion.close()
 
-    def insertar_producto_en_categoria(self, nombre, precio, stock, id_categoria):
-        return self.insertar_cultivo_en_categoria(nombre, precio, stock, id_categoria)
+    def insertar_producto_en_categoria(self, nombre, variedad, precio, stock, id_categoria):
+        return self.insertar_cultivo_en_categoria(nombre, variedad, precio, stock, id_categoria)
 
-    def insertar_cultivo_en_categoria(self, nombre, precio, stock, id_categoria):
+    def insertar_cultivo_en_categoria(self, nombre, variedad, precio, stock, id_categoria):
         conexion = None
         try:
             conexion = Conexion.obtener_conexion()
             cursor = conexion.cursor()
+            # Guardamos combinando el nombre y la variedad o ajustándolo a tus columnas
+            nombre_completo = f"{nombre} - {variedad}" if variedad else nombre
             sql = """
             INSERT INTO producto (nombre, precio, stock, id_categoria)
             VALUES (%s, %s, %s, %s);
             """
-            cursor.execute(sql, (nombre, precio, stock, id_categoria))
+            cursor.execute(sql, (nombre_completo, precio, stock, id_categoria))
             conexion.commit()
         except Exception as e:
             print(f"Error al insertar producto en la categoría: {e}")
@@ -153,8 +146,10 @@ class CategoriaDAO:
                 cursor.close()
                 conexion.close()
 
-# 4. INTERFAZ GRÁFICA (FLET)
 
+# ==========================================
+# 4. INTERFAZ GRÁFICA (FLET) CON CAMPOS EXACTOS
+# ==========================================
 def main(page: ft.Page):
     page.title = "Rancho 3 Cultivos"
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
@@ -186,7 +181,7 @@ def main(page: ft.Page):
         except (ValueError, TypeError):
             return default
 
-    def field(label, value="", read_only=False, width=300):
+    def field(label, value="", read_only=False, width=320):
         return ft.TextField(label=label, value=str(value), read_only=read_only, width=width)
 
     def layout_base(titulo, vista_interior):
@@ -237,22 +232,58 @@ def main(page: ft.Page):
             set_message(f"No se pudieron cargar las categorías: {exc}", ft.Colors.RED_700)
             categorias = []
 
+        total_productos = sum(len(categoria_dao.obtener_productos_por_categoria(cat.id_categoria)) for cat in categorias)
+        if total_productos == 0 and categorias:
+            id_fruta = next((c.id_categoria for c in categorias if "fruta" in c.nombre.lower()), categorias[0].id_categoria)
+            id_verdura = next((c.id_categoria for c in categorias if "verdura" in c.nombre.lower()), id_fruta)
+            id_legumbre = next((c.id_categoria for c in categorias if "legumbre" in c.nombre.lower() or "grano" in c.nombre.lower()), id_fruta)
+
+            # Precarga con los datos exactos que proporcionaste
+            cultivos_iniciales = [
+                ("Durazno", "Toro", 25.0, 100, id_fruta),
+                ("Durazno", "Oro", 30.0, 50, id_fruta),
+                ("Nopal", "Verde tierno", 15.0, 250, id_verdura),
+                ("Haba", "Chica verde", 20.0, 280, id_legumbre),
+                ("Maíz Blanco", "Chico liso y firme", 12.0, 1000, id_legumbre),
+                ("Frijol", "Negro y Bayo", 35.0, 500, id_legumbre)
+            ]
+            for nom, var, precio, stock, id_cat in cultivos_iniciales:
+                categoria_dao.insertar_producto_en_categoria(nom, var, precio, stock, id_cat)
+            categorias = categoria_dao.obtener_todo()
+
         rows = []
         for cat in categorias:
             productos = categoria_dao.obtener_productos_por_categoria(cat.id_categoria)
 
             def abrir_agregar_producto(id_cat=cat.id_categoria, nombre_cat=cat.nombre):
-                nombre_field = field("Nombre del cultivo (ej. Durazno, Nopal)", width=320)
-                precio_field = field("Precio ($)", width=320)
-                stock_field = field("Stock (Cantidad)", width=320)
+                # Campos exactamente como en la imagen que enviaste
+                id_field = field("ID Categoría/Cultivo", value=str(id_cat), read_only=True)
+                
+                # Menú desplegable o campo de selección para Nombre de cultivo / producto
+                nombre_dropdown = ft.Dropdown(
+                    label="Nombre de cultivo / producto",
+                    options=[
+                        ft.dropdown.Option("Durazno"),
+                        ft.dropdown.Option("Nopal"),
+                        ft.dropdown.Option("Haba"),
+                        ft.dropdown.Option("Maíz Blanco"),
+                        ft.dropdown.Option("Frijol"),
+                    ],
+                    width=320
+                )
+                
+                variedad_field = field("Variedad / Detalle (ej. Toro, Oro, Negro y Bayo)")
+                precio_field = field("Precio por unidad/kg ($)")
+                stock_field = field("Stock disponible")
 
                 def guardar(_):
-                    if not nombre_field.value.strip():
-                        set_message("Ingresa un nombre válido.", ft.Colors.RED_700)
+                    if not nombre_dropdown.value:
+                        set_message("Selecciona un nombre de cultivo.", ft.Colors.RED_700)
                         return
 
                     categoria_dao.insertar_producto_en_categoria(
-                        nombre_field.value.strip(),
+                        nombre_dropdown.value,
+                        variedad_field.value.strip(),
                         safe_float(precio_field.value),
                         safe_int(stock_field.value),
                         id_cat
@@ -261,8 +292,8 @@ def main(page: ft.Page):
                     set_message("Cultivo registrado correctamente.", PRIMARY)
 
                 show_form_page(
-                    f"Agregar cultivo a {nombre_cat}", 
-                    [nombre_field, precio_field, stock_field], 
+                    "Agregar Categoría / Cultivo", 
+                    [id_field, nombre_dropdown, variedad_field, precio_field, stock_field], 
                     guardar, 
                     on_cancel=lambda e: mostrar_categorias()
                 )
@@ -273,10 +304,10 @@ def main(page: ft.Page):
                         ft.DataRow(
                             cells=[
                                 ft.DataCell(ft.Text(str(prod[0]))),
-                                ft.DataCell(ft.Text(prod[1])),
+                                ft.DataCell(ft.Text(prod[1])),  # Nombre / Variedad
                                 ft.DataCell(ft.Text(cat.nombre)),
-                                ft.DataCell(ft.Text(f"${prod[2]:.2f}")),
-                                ft.DataCell(ft.Text(str(prod[3]))),
+                                ft.DataCell(ft.Text(f"${prod[2]:.2f}")),  # Precio
+                                ft.DataCell(ft.Text(str(prod[3]))),  # Stock
                                 ft.DataCell(
                                     ft.Row(
                                         spacing=0,
@@ -327,8 +358,8 @@ def main(page: ft.Page):
             "Cultivos por Categoría", 
             table_view(
                 "Cultivos", 
-                "Gestión de cultivos y productos registrados.", 
-                "Agregar cultivo", 
+                "Gestión de cultivos, variedades, precios y stock.", 
+                "Agregar Categoría / Cultivo", 
                 columnas, 
                 rows, 
                 lambda e: abrir_agregar_producto(id_primera_cat) if id_primera_cat else set_message("Primero registra una categoría.", ft.Colors.RED_700)
@@ -341,4 +372,4 @@ def main(page: ft.Page):
 
 if __name__ == "__main__":
     ft.app(target=main)
-       
+    
