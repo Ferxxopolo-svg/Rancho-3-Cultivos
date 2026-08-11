@@ -179,9 +179,16 @@ def main_window(page: ft.Page):
             bgcolor=LIGHT_TONE,
             padding=8,
             alignment=ft.Alignment.CENTER,
-            content=ft.Text("@Copyright Rancho Tres Cultivos", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK54)
+            content=ft.Column(
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                spacing=2,
+                controls=[
+                    ft.Text("Rancho 3 Cultivos", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK54),
+                    ft.Text("Todos los derechos reservados", size=11, color=ft.Colors.BLACK54),
+                    ft.Text("Versión 1.5", size=10, color=ft.Colors.BLACK45),
+                ]
+            )
         )
-
     def layout_base(title: str, body):
         return ft.Column(
             controls=[
