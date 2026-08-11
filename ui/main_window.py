@@ -150,13 +150,64 @@ def main_window(page: ft.Page):
                 tooltip="Inicio",
                 on_click=click_and_call(lambda e: mostrar_inicio(), 'mostrar_inicio')
             ),
-            ft.Text(title, weight=ft.FontWeight.BOLD, size=16, color=TEXT_DARK),
+            ft.Container(
+                width=50,
+                height=50,
+                padding=4,
+                border_radius=25,
+                bgcolor=ft.Colors.WHITE,
+                alignment=ft.Alignment.CENTER,
+                content=ft.Image(
+                    src=LOGIN_LOGO,
+                    width=46,
+                    height=46,
+                    fit=ft.BoxFit.CONTAIN,
+                    tooltip="Logo Rancho Tres Cultivos",
+                ),
+            ),
+            ft.Column(
+                spacing=0,
+                alignment=ft.MainAxisAlignment.CENTER,
+                controls=[
+                    ft.Text(
+                        title,
+                        weight=ft.FontWeight.BOLD,
+                        size=17,
+                        color=TEXT_DARK,
+                    ),
+                    ft.Text(
+                        "Rancho Tres Cultivos",
+                        size=10,
+                        color=SECONDARY,
+                    ),
+                ],
+            ),
             ft.Container(expand=True),
         ]
 
         if usuario_actual["value"] is not None:
             header_controls.extend([
-                ft.Text(f"{usuario_actual['value'].nombre}", size=12, color=TEXT_DARK),
+                ft.Container(
+                    padding=8,
+                    border_radius=18,
+                    bgcolor=LIGHT_TONE,
+                    content=ft.Row(
+                        spacing=6,
+                        controls=[
+                            ft.Icon(
+                                ft.Icons.ACCOUNT_CIRCLE,
+                                size=20,
+                                color=SECONDARY,
+                            ),
+                            ft.Text(
+                                f"{usuario_actual['value'].nombre}",
+                                size=12,
+                                weight=ft.FontWeight.BOLD,
+                                color=TEXT_DARK,
+                            ),
+                        ],
+                    ),
+                ),
                 ft.IconButton(
                     icon=ft.Icons.LOGOUT,
                     icon_color=SECONDARY,
@@ -166,11 +217,14 @@ def main_window(page: ft.Page):
             ])
 
         return ft.Container(
+            height=70,
             bgcolor=PRIMARY,
-            padding=10,
+            padding=8,
             content=ft.Row(
                 controls=header_controls,
-                alignment=ft.MainAxisAlignment.START
+                spacing=12,
+                alignment=ft.MainAxisAlignment.START,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
             )
         )
 
